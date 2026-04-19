@@ -520,10 +520,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Apple SD Gothic Ne
 
 </main>
 
-<!-- Firebase SDK 추가 -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
 <script>
 // ===== DATA =====
 const KEY = 'studyboard_v1';
@@ -556,28 +552,12 @@ let cardIdx    = 0;
 let cardFlip   = false;
 let filteredCards = [];
 
-// Firebase 설정 (본인의 설정 값으로 변경해야 합니다)
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-};
-firebase.initializeApp(firebaseConfig);
-const firestore = firebase.firestore();
-
-async function load() {
-  try {
-    const docSnap = await firestore.collection('studyboard').doc('my_data').get();
-    db = docSnap.exists ? docSnap.data() : def();
-  } catch {
-    db = def();
-  }
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || def(); } catch { return def(); }
 }
 function def() { return {plans:[], timeline:[], cards:[], specs:[], badges:[]}; }
-async function save() {
-  try {
-    await firestore.collection('studyboard').doc('my_data').set(db);
-  } catch (e) { console.error('저장 실패', e); }
+function save() {
+  localStorage.setItem(KEY, JSON.stringify(db));
 }
 function uid()  { return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
 function today(){ return new Date().toISOString().slice(0,10); }
@@ -973,8 +953,8 @@ function updateDate() {
 }
 
 // ===== INIT =====
-async function init() {
-  await load();
+function init() {
+  db = load();
   updateDate();
   const t = today();
   document.getElementById('tlDate').value   = t;
