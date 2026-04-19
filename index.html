@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyBoard</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pri:#6366f1;--pri-l:#eef2ff;--pri-d:#4f46e5;
+  --teal:#0d9488;--teal-l:#f0fdfa;
+  --amber:#d97706;--amber-l:#fffbeb;
+  --rose:#e11d48;--rose-l:#fff1f2;
+  --green:#16a34a;--green-l:#f0fdf4;
+  --bg:#f8fafc;--surface:#fff;--surface2:#f1f5f9;
+  --border:#e2e8f0;--border-d:#cbd5e1;
+  --text:#0f172a;--text2:#475569;--text3:#94a3b8;
+  --sh1:0 1px 3px rgba(0,0,0,.06);
+  --sh2:0 4px 12px rgba(0,0,0,.08);
+  --sh3:0 10px 30px rgba(0,0,0,.12);
+  --r:10px;--r-sm:6px;--r-lg:16px;--r-full:9999px
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+
+/* HEADER */
+.header{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;box-shadow:var(--sh1)}
+.header-inner{max-width:1120px;margin:0 auto;padding:0 24px;height:60px;display:flex;align-items:center;gap:20px}
+.logo{font-size:18px;font-weight:800;color:var(--pri);display:flex;align-items:center;gap:6px;flex-shrink:0;letter-spacing:-.5px}
+.nav{display:flex;gap:2px;flex:1}
+.nav-item{padding:7px 14px;border:none;background:none;cursor:pointer;border-radius:var(--r-sm);font-size:13.5px;font-weight:500;color:var(--text2);transition:all .15s;display:flex;align-items:center;gap:5px;white-space:nowrap;font-family:inherit}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:var(--pri-l);color:var(--pri)}
+.today-badge{font-size:12px;color:var(--text2);background:var(--surface2);padding:4px 10px;border-radius:var(--r-full);border:1px solid var(--border);white-space:nowrap;flex-shrink:0}
+
+/* MAIN */
+.main{max-width:1120px;margin:0 auto;padding:28px 24px 60px}
+.panel{display:none}
+.panel.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh1)}
+
+/* BUTTONS */
+.btn{padding:8px 16px;border:none;border-radius:var(--r-sm);font-size:13.5px;font-weight:500;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
+.btn-primary{background:var(--pri);color:#fff}
+.btn-primary:hover{background:var(--pri-d)}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--text2)}
+.btn-ghost:hover{background:var(--surface2);border-color:var(--border-d)}
+.btn-icon{width:32px;height:32px;padding:0;justify-content:center}
+
+/* CATEGORY */
+.cat-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:var(--r-full);font-size:11.5px;font-weight:600}
+.cat-prog{background:var(--pri-l);color:var(--pri-d)}
+.cat-cert{background:var(--amber-l);color:var(--amber)}
+.cat-lang{background:var(--teal-l);color:var(--teal)}
+.cat-etc{background:var(--surface2);color:var(--text2)}
+
+/* FILTER CHIPS */
+.filter-chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:5px 12px;border-radius:var(--r-full);font-size:12.5px;font-weight:500;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;font-family:inherit}
+.chip:hover{border-color:var(--pri);color:var(--pri)}
+.chip.active{background:var(--pri);border-color:var(--pri);color:#fff}
+
+/* PROGRESS */
+.progress-wrap{background:var(--surface2);border-radius:var(--r-full);height:8px;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--pri),#818cf8);border-radius:var(--r-full);transition:width .4s ease}
+
+/* FORM */
+.form-row{display:flex;gap:10px;align-items:flex-end}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:12px;font-weight:600;color:var(--text2)}
+.form-input,.form-select{padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13.5px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s;font-family:inherit}
+.form-input:focus,.form-select:focus{border-color:var(--pri)}
+.form-textarea{padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13.5px;color:var(--text);background:var(--surface);outline:none;resize:vertical;min-height:80px;font-family:inherit;line-height:1.5;transition:border-color .15s}
+.form-textarea:focus{border-color:var(--pri)}
+
+/* ===== PLAN TAB ===== */
+.plan-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;text-align:center}
+.stat-num{font-size:28px;font-weight:800;color:var(--pri);line-height:1;margin-bottom:4px}
+.stat-label{font-size:12px;color:var(--text3);font-weight:500}
+.plan-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.add-plan-form{background:var(--surface);border:1.5px dashed var(--border-d);border-radius:var(--r);padding:16px;margin-bottom:14px;display:none}
+.add-plan-form.show{display:block;animation:fadeIn .2s ease}
+.plan-list{display:flex;flex-direction:column;gap:8px}
+.plan-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:12px;transition:all .2s;animation:fadeIn .2s ease}
+.plan-item:hover{box-shadow:var(--sh2)}
+.plan-item.done{background:#f8fff8;border-color:#d1fae5}
+.plan-check{width:20px;height:20px;border-radius:6px;border:2px solid var(--border-d);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-size:12px;font-weight:700;color:#fff}
+.plan-item.done .plan-check{background:var(--green);border-color:var(--green)}
+.plan-title{flex:1;font-size:14px;font-weight:500}
+.plan-item.done .plan-title{text-decoration:line-through;color:var(--text3)}
+.plan-duration{font-size:12px;color:var(--text3);white-space:nowrap}
+.del-btn{width:28px;height:28px;border:none;background:none;cursor:pointer;border-radius:var(--r-sm);color:var(--text3);display:flex;align-items:center;justify-content:center;transition:all .15s;font-size:16px;flex-shrink:0}
+.del-btn:hover{background:var(--rose-l);color:var(--rose)}
+
+/* ===== TIMELINE TAB ===== */
+.timeline-toolbar{display:flex;gap:8px;margin-bottom:20px;align-items:center;flex-wrap:wrap}
+.section-title{font-size:20px;font-weight:700;margin:0}
+.timeline-wrap{position:relative;padding-left:28px}
+.timeline-line{position:absolute;left:11px;top:0;bottom:0;width:2px;background:var(--border)}
+.timeline-group{margin-bottom:28px}
+.timeline-date-label{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;position:relative;display:flex;align-items:center;gap:8px}
+.timeline-dot{width:12px;height:12px;border-radius:50%;background:var(--pri);border:2px solid var(--surface);box-shadow:0 0 0 2px var(--pri);flex-shrink:0;margin-left:-24px}
+.timeline-entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;transition:box-shadow .15s}
+.timeline-entry:hover{box-shadow:var(--sh2)}
+.timeline-entry-header{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.timeline-entry-title{font-size:14px;font-weight:600;flex:1}
+.timeline-entry-notes{font-size:13px;color:var(--text2);margin-top:6px;line-height:1.6;white-space:pre-wrap}
+.timeline-entry-meta{display:flex;gap:8px;align-items:center;margin-top:6px}
+.meta-tag{font-size:11.5px;color:var(--text3)}
+
+/* ===== CARDS TAB ===== */
+.cards-layout{display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start}
+.flashcard-wrap{perspective:1000px;height:260px;cursor:pointer;user-select:none}
+.flashcard{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .5s ease;border-radius:var(--r-lg)}
+.flashcard.flipped{transform:rotateY(180deg)}
+.card-face{position:absolute;inset:0;border-radius:var(--r-lg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.card-front{background:linear-gradient(135deg,var(--pri),#818cf8);color:#fff}
+.card-back{background:var(--surface);border:1px solid var(--border);transform:rotateY(180deg)}
+.card-face-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:16px}
+.card-face-text{font-size:16px;font-weight:600;text-align:center;line-height:1.5}
+.card-back .card-face-text{color:var(--text);font-size:14px}
+.card-back .card-face-label{color:var(--text3)}
+.card-hint{font-size:11.5px;margin-top:16px;opacity:.6}
+.card-nav{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+.card-counter{font-size:13px;color:var(--text2)}
+.card-list-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
+.card-list-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center}
+.card-list-items{max-height:420px;overflow-y:auto}
+.card-list-item{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .1s}
+.card-list-item:hover{background:var(--bg)}
+.card-list-item.active{background:var(--pri-l)}
+.card-list-item:last-child{border-bottom:none}
+.card-list-item-q{font-size:13.5px;font-weight:500;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.card-list-item.active .card-list-item-q{color:var(--pri)}
+
+/* ===== SPEC TAB ===== */
+.spec-layout{display:grid;grid-template-columns:1fr 360px;gap:20px}
+.spec-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;transition:box-shadow .15s}
+.spec-item:hover{box-shadow:var(--sh2)}
+.spec-icon{width:40px;height:40px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.spec-icon.prog{background:var(--pri-l)}
+.spec-icon.cert{background:var(--amber-l)}
+.spec-icon.lang{background:var(--teal-l)}
+.spec-icon.etc{background:var(--surface2)}
+.spec-info{flex:1}
+.spec-title{font-size:14px;font-weight:600;margin-bottom:2px}
+.spec-desc{font-size:13px;color:var(--text2)}
+.spec-meta{display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap}
+.spec-date{font-size:12px;color:var(--text3)}
+.badges-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.badges-title{font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text)}
+.badges-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.badge-item{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:var(--r-sm);background:var(--bg);border:1px solid var(--border);transition:all .2s}
+.badge-item.unlocked{background:linear-gradient(135deg,#fef9c3,#fef3c7);border-color:#fcd34d}
+.badge-emoji{font-size:22px}
+.badge-item.locked .badge-emoji{filter:grayscale(1);opacity:.4}
+.badge-name{font-size:12px;font-weight:600;color:var(--text)}
+.badge-item.locked .badge-name{color:var(--text3)}
+.badge-desc{font-size:11px;color:var(--text3)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border-radius:var(--r-lg);padding:24px;width:100%;max-width:480px;box-shadow:var(--sh3);transform:scale(.95) translateY(8px);transition:transform .2s;margin:16px}
+.modal-overlay.show .modal{transform:scale(1) translateY(0)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.modal-title{font-size:16px;font-weight:700}
+.modal-close{width:30px;height:30px;border:none;background:var(--surface2);border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--text2);transition:all .15s}
+.modal-close:hover{background:var(--border)}
+.modal-body{display:flex;flex-direction:column;gap:14px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:1000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:#1e293b;color:#fff;padding:12px 16px;border-radius:var(--r);font-size:13.5px;box-shadow:var(--sh3);display:flex;align-items:center;gap:8px;animation:toastIn .3s ease}
+@keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:48px 24px;color:var(--text3)}
+.empty-icon{font-size:48px;margin-bottom:12px}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-d);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .plan-stats{grid-template-columns:repeat(2,1fr)}
+  .cards-layout{grid-template-columns:1fr}
+  .spec-layout{grid-template-columns:1fr}
+  .header-inner{padding:0 16px;gap:12px}
+  .main{padding:20px 16px 60px}
+  .nav-item span{display:none}
+  .form-row{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">📚 StudyBoard</div>
+    <nav class="nav">
+      <button class="nav-item active" data-tab="plan">📋 <span>오늘의 플랜</span></button>
+      <button class="nav-item" data-tab="timeline">📅 <span>학습 타임라인</span></button>
+      <button class="nav-item" data-tab="cards">🃏 <span>복습 카드</span></button>
+      <button class="nav-item" data-tab="spec">🏆 <span>스펙 & 뱃지</span></button>
+    </nav>
+    <span class="today-badge" id="headerDate"></span>
+  </div>
+</header>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- MODAL: 타임라인 추가 -->
+<div class="modal-overlay" id="tlModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📅 학습 기록 추가</span>
+      <button class="modal-close" onclick="closeModal('tlModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">날짜</label>
+          <input class="form-input" type="date" id="tlDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">카테고리</label>
+          <select class="form-select" id="tlCat">
+            <option value="prog">💻 프로그래밍</option>
+            <option value="cert">📜 자격증</option>
+            <option value="lang">🌍 어학</option>
+            <option value="etc">📌 기타</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">학습 제목</label>
+        <input class="form-input" type="text" id="tlTitle" placeholder="예: JavaScript 비동기 처리">
+      </div>
+      <div class="form-group">
+        <label class="form-label">학습 시간 (분)</label>
+        <input class="form-input" type="number" id="tlDuration" placeholder="60" min="1" style="width:120px">
+      </div>
+      <div class="form-group">
+        <label class="form-label">학습 내용 메모</label>
+        <textarea class="form-textarea" id="tlNotes" placeholder="오늘 배운 내용을 간략히 정리해보세요..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('tlModal')">취소</button>
+      <button class="btn btn-primary" onclick="addTimeline()">추가하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: 복습 카드 추가 -->
+<div class="modal-overlay" id="cardModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🃏 복습 카드 추가</span>
+      <button class="modal-close" onclick="closeModal('cardModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">카테고리</label>
+        <select class="form-select" id="cardCat" style="width:100%">
+          <option value="prog">💻 프로그래밍</option>
+          <option value="cert">📜 자격증</option>
+          <option value="lang">🌍 어학</option>
+          <option value="etc">📌 기타</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">앞면 (질문 / 키워드)</label>
+        <textarea class="form-textarea" id="cardFront" placeholder="예: Promise와 async/await의 차이는?"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">뒷면 (답 / 설명)</label>
+        <textarea class="form-textarea" id="cardBack" placeholder="예: async/await는 Promise 기반의 문법적 설탕으로..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('cardModal')">취소</button>
+      <button class="btn btn-primary" onclick="addCard()">추가하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: 스펙 추가 -->
+<div class="modal-overlay" id="specModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🏆 스펙 추가</span>
+      <button class="modal-close" onclick="closeModal('specModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">카테고리</label>
+          <select class="form-select" id="specCat">
+            <option value="prog">💻 프로그래밍</option>
+            <option value="cert">📜 자격증</option>
+            <option value="lang">🌍 어학</option>
+            <option value="etc">📌 기타</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">취득 날짜</label>
+          <input class="form-input" type="date" id="specDate">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">제목</label>
+        <input class="form-input" type="text" id="specTitle" placeholder="예: AWS Solutions Architect Associate 취득">
+      </div>
+      <div class="form-group">
+        <label class="form-label">설명 / 점수</label>
+        <input class="form-input" type="text" id="specDesc" placeholder="예: 820점, 상위 10%">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('specModal')">취소</button>
+      <button class="btn btn-primary" onclick="addSpec()">추가하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- ===== 오늘의 플랜 ===== -->
+  <div class="panel active" id="panel-plan">
+    <div class="plan-stats">
+      <div class="stat-card">
+        <div class="stat-num" id="sDone">0</div>
+        <div class="stat-label">완료한 플랜</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="sTotal">0</div>
+        <div class="stat-label">전체 플랜</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="sMin">0</div>
+        <div class="stat-label">목표 시간(분)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="sPct">0%</div>
+        <div class="stat-label">달성률</div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:16px;margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:600;color:var(--text2)">오늘의 진행률</span>
+        <span id="pPct" style="font-size:13px;font-weight:700;color:var(--pri)">0%</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-bar" id="pBar" style="width:0%"></div></div>
+    </div>
+
+    <div class="plan-toolbar">
+      <div class="filter-chips">
+        <button class="chip active" data-pf="all">전체</button>
+        <button class="chip" data-pf="prog">💻 프로그래밍</button>
+        <button class="chip" data-pf="cert">📜 자격증</button>
+        <button class="chip" data-pf="lang">🌍 어학</button>
+        <button class="chip" data-pf="etc">📌 기타</button>
+      </div>
+      <button class="btn btn-primary" id="togglePlanBtn">+ 플랜 추가</button>
+    </div>
+
+    <div class="add-plan-form" id="addPlanForm">
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">할 일</label>
+          <input class="form-input" type="text" id="planTitle" placeholder="오늘 공부할 내용을 입력하세요">
+        </div>
+        <div class="form-group">
+          <label class="form-label">카테고리</label>
+          <select class="form-select" id="planCat">
+            <option value="prog">💻 프로그래밍</option>
+            <option value="cert">📜 자격증</option>
+            <option value="lang">🌍 어학</option>
+            <option value="etc">📌 기타</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">시간(분)</label>
+          <input class="form-input" type="number" id="planDur" placeholder="60" min="1" style="width:80px">
+        </div>
+        <div class="form-group" style="justify-content:flex-end">
+          <button class="btn btn-primary" onclick="addPlan()">추가</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="plan-list" id="planList"></div>
+  </div>
+
+  <!-- ===== 학습 타임라인 ===== -->
+  <div class="panel" id="panel-timeline">
+    <div class="timeline-toolbar">
+      <h2 class="section-title" style="flex:1">📅 학습 타임라인</h2>
+      <div class="filter-chips">
+        <button class="chip active" data-tlf="all">전체</button>
+        <button class="chip" data-tlf="prog">💻</button>
+        <button class="chip" data-tlf="cert">📜</button>
+        <button class="chip" data-tlf="lang">🌍</button>
+        <button class="chip" data-tlf="etc">📌</button>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('tlModal')">+ 기록 추가</button>
+    </div>
+    <div class="timeline-wrap">
+      <div class="timeline-line"></div>
+      <div id="tlContent"></div>
+    </div>
+  </div>
+
+  <!-- ===== 복습 카드 ===== -->
+  <div class="panel" id="panel-cards">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <h2 class="section-title">🃏 복습 카드</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div class="filter-chips">
+          <button class="chip active" data-cf="all">전체</button>
+          <button class="chip" data-cf="prog">💻</button>
+          <button class="chip" data-cf="cert">📜</button>
+          <button class="chip" data-cf="lang">🌍</button>
+          <button class="chip" data-cf="etc">📌</button>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('cardModal')">+ 카드 추가</button>
+      </div>
+    </div>
+
+    <div class="cards-layout">
+      <div>
+        <div class="flashcard-wrap" onclick="flipCard()">
+          <div class="flashcard" id="flashcard">
+            <div class="card-face card-front">
+              <div class="card-face-label">QUESTION</div>
+              <div class="card-face-text" id="fcFront">카드를 추가해보세요! ✨</div>
+              <div class="card-hint">클릭하여 뒤집기</div>
+            </div>
+            <div class="card-face card-back">
+              <div class="card-face-label">ANSWER</div>
+              <div class="card-face-text" id="fcBack">-</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-nav">
+          <button class="btn btn-ghost btn-icon" onclick="prevCard()">←</button>
+          <span class="card-counter" id="cardCounter">0 / 0</span>
+          <button class="btn btn-ghost btn-icon" onclick="nextCard()">→</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-ghost" id="cardDelBtn" style="flex:1;color:var(--rose)" onclick="deleteCard()">🗑 삭제</button>
+        </div>
+      </div>
+
+      <div class="card-list-panel">
+        <div class="card-list-header">
+          <span style="font-size:14px;font-weight:700;flex:1">카드 목록</span>
+          <span id="cardCount" style="font-size:12px;color:var(--text3)">0개</span>
+        </div>
+        <div class="card-list-items" id="cardListItems"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 스펙 & 뱃지 ===== -->
+  <div class="panel" id="panel-spec">
+    <div class="spec-layout">
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h2 class="section-title">🏆 스펙 관리</h2>
+          <button class="btn btn-primary" onclick="openModal('specModal')">+ 스펙 추가</button>
+        </div>
+        <div id="specList"></div>
+      </div>
+      <div>
+        <div class="badges-section">
+          <div class="badges-title">🎖 업적 뱃지</div>
+          <div class="badges-grid" id="badgesGrid"></div>
+        </div>
+        <div class="card" style="padding:16px;margin-top:16px">
+          <div class="badges-title">📊 전체 통계</div>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+            <div style="display:flex;justify-content:space-between">
+              <span style="font-size:13px;color:var(--text2)">총 학습 기록</span>
+              <span id="gEntries" style="font-size:14px;font-weight:700;color:var(--pri)">0개</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="font-size:13px;color:var(--text2)">누적 학습 시간</span>
+              <span id="gHours" style="font-size:14px;font-weight:700;color:var(--pri)">0시간</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="font-size:13px;color:var(--text2)">복습 카드</span>
+              <span id="gCards" style="font-size:14px;font-weight:700;color:var(--pri)">0개</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="font-size:13px;color:var(--text2)">등록된 스펙</span>
+              <span id="gSpecs" style="font-size:14px;font-weight:700;color:var(--pri)">0개</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="font-size:13px;color:var(--text2)">완료한 플랜(전체)</span>
+              <span id="gPlans" style="font-size:14px;font-weight:700;color:var(--pri)">0개</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ===== DATA =====
+const KEY = 'studyboard_v1';
+
+const BADGES_DEF = [
+  {id:'first_plan',   emoji:'🌱', name:'첫 걸음',     desc:'첫 플랜 완료'},
+  {id:'plan_10',      emoji:'✅', name:'실천왕',       desc:'플랜 10개 완료'},
+  {id:'plan_50',      emoji:'🎯', name:'목표 달성',    desc:'플랜 50개 완료'},
+  {id:'first_tl',     emoji:'📖', name:'학습 시작',    desc:'첫 학습 기록'},
+  {id:'tl_10',        emoji:'🔥', name:'꾸준함',       desc:'학습 기록 10개'},
+  {id:'first_card',   emoji:'🃏', name:'복습 시작',    desc:'첫 복습 카드'},
+  {id:'card_10',      emoji:'🧠', name:'복습왕',       desc:'복습 카드 10개'},
+  {id:'first_spec',   emoji:'🏆', name:'스펙 관리',    desc:'첫 스펙 등록'},
+  {id:'h10',          emoji:'⏱', name:'10시간 달성',  desc:'누적 학습 10시간'},
+  {id:'h100',         emoji:'🎓', name:'100시간 달성', desc:'누적 학습 100시간'},
+];
+
+const CAT = {
+  prog: {label:'프로그래밍', emoji:'💻', cls:'cat-prog'},
+  cert: {label:'자격증',     emoji:'📜', cls:'cat-cert'},
+  lang: {label:'어학',       emoji:'🌍', cls:'cat-lang'},
+  etc:  {label:'기타',       emoji:'📌', cls:'cat-etc'},
+};
+
+let db = def();
+let planFilter = 'all';
+let tlFilter   = 'all';
+let cardFilter = 'all';
+let cardIdx    = 0;
+let cardFlip   = false;
+let filteredCards = [];
+
+async function load() {
+  try {
+    const res = await fetch('/api/data');
+    db = await res.json();
+  } catch {
+    db = def();
+  }
+}
+function def() { return {plans:[], timeline:[], cards:[], specs:[], badges:[]}; }
+async function save() {
+  await fetch('/api/data', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(db)
+  });
+}
+function uid()  { return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+function today(){ return new Date().toISOString().slice(0,10); }
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtDate(s) {
+  const d = new Date(s + 'T00:00:00');
+  const day = ['일','월','화','수','목','금','토'][d.getDay()];
+  return `${d.getFullYear()}.${p2(d.getMonth()+1)}.${p2(d.getDate())} (${day})`;
+}
+function p2(n) { return String(n).padStart(2,'0'); }
+
+function catBadge(cat) {
+  const c = CAT[cat] || CAT.etc;
+  return `<span class="cat-badge ${c.cls}">${c.emoji} ${c.label}</span>`;
+}
+
+function toast(msg, icon='✅') {
+  const w = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<span>${icon}</span>${esc(msg)}`;
+  w.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ===== MODAL =====
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('show'); });
+});
+
+// ===== TABS =====
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'spec') { renderSpecs(); renderStats(); renderBadges(); }
+  });
+});
+
+// ===== PLAN =====
+document.getElementById('togglePlanBtn').addEventListener('click', () => {
+  const f = document.getElementById('addPlanForm');
+  f.classList.toggle('show');
+  if (f.classList.contains('show')) document.getElementById('planTitle').focus();
+});
+
+document.getElementById('planTitle').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addPlan();
+});
+
+document.querySelectorAll('[data-pf]').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('[data-pf]').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    planFilter = chip.dataset.pf;
+    renderPlans();
+  });
+});
+
+function addPlan() {
+  const title = document.getElementById('planTitle').value.trim();
+  if (!title) { toast('할 일을 입력해주세요', '⚠️'); return; }
+  const cat = document.getElementById('planCat').value;
+  const dur = parseInt(document.getElementById('planDur').value) || 0;
+  db.plans.push({id:uid(), date:today(), title, cat, dur, done:false});
+  save();
+  document.getElementById('planTitle').value = '';
+  document.getElementById('planDur').value = '';
+  renderPlans();
+  toast('플랜이 추가됐어요!');
+}
+
+function togglePlan(id) {
+  const p = db.plans.find(x => x.id === id);
+  if (!p) return;
+  p.done = !p.done;
+  save();
+  renderPlans();
+  checkBadges();
+  if (p.done) toast('완료! 수고했어요 🎉', '🎉');
+}
+
+function delPlan(id) {
+  db.plans = db.plans.filter(x => x.id !== id);
+  save();
+  renderPlans();
+}
+
+function renderPlans() {
+  const todayPlans = db.plans.filter(p => p.date === today());
+  const shown = planFilter === 'all' ? todayPlans : todayPlans.filter(p => p.cat === planFilter);
+  const done  = todayPlans.filter(p => p.done).length;
+  const total = todayPlans.length;
+  const mins  = todayPlans.reduce((s,p) => s + (p.dur||0), 0);
+  const pct   = total > 0 ? Math.round(done/total*100) : 0;
+
+  document.getElementById('sDone').textContent  = done;
+  document.getElementById('sTotal').textContent = total;
+  document.getElementById('sMin').textContent   = mins;
+  document.getElementById('sPct').textContent   = pct + '%';
+  document.getElementById('pBar').style.width   = pct + '%';
+  document.getElementById('pPct').textContent   = pct + '%';
+
+  const el = document.getElementById('planList');
+  if (!shown.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>오늘의 플랜을 추가해보세요!</p></div>`;
+    return;
+  }
+  el.innerHTML = shown.map(p => `
+    <div class="plan-item ${p.done?'done':''}">
+      <div class="plan-check" onclick="togglePlan('${p.id}')">${p.done?'✓':''}</div>
+      <div class="plan-title">${esc(p.title)}</div>
+      ${catBadge(p.cat)}
+      ${p.dur ? `<span class="plan-duration">⏱ ${p.dur}분</span>` : ''}
+      <button class="del-btn" onclick="delPlan('${p.id}')">×</button>
+    </div>
+  `).join('');
+}
+
+// ===== TIMELINE =====
+document.querySelectorAll('[data-tlf]').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('[data-tlf]').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    tlFilter = chip.dataset.tlf;
+    renderTimeline();
+  });
+});
+
+function addTimeline() {
+  const date  = document.getElementById('tlDate').value || today();
+  const cat   = document.getElementById('tlCat').value;
+  const title = document.getElementById('tlTitle').value.trim();
+  const dur   = parseInt(document.getElementById('tlDuration').value) || 0;
+  const notes = document.getElementById('tlNotes').value.trim();
+  if (!title) { toast('학습 제목을 입력해주세요', '⚠️'); return; }
+  db.timeline.push({id:uid(), date, cat, title, dur, notes});
+  db.timeline.sort((a,b) => b.date.localeCompare(a.date));
+  save();
+  closeModal('tlModal');
+  ['tlTitle','tlNotes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('tlDuration').value = '';
+  renderTimeline();
+  checkBadges();
+  toast('학습 기록이 추가됐어요!');
+}
+
+function delTimeline(id) {
+  db.timeline = db.timeline.filter(x => x.id !== id);
+  save();
+  renderTimeline();
+}
+
+function renderTimeline() {
+  const list = tlFilter === 'all' ? db.timeline : db.timeline.filter(e => e.cat === tlFilter);
+  const el   = document.getElementById('tlContent');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><p>학습 기록을 추가해보세요!</p></div>`;
+    return;
+  }
+  const groups = {};
+  list.forEach(e => { (groups[e.date] = groups[e.date] || []).push(e); });
+  const dates = Object.keys(groups).sort((a,b) => b.localeCompare(a));
+  el.innerHTML = dates.map(date => `
+    <div class="timeline-group">
+      <div class="timeline-date-label">
+        <div class="timeline-dot"></div>
+        ${fmtDate(date)}
+      </div>
+      ${groups[date].map(e => `
+        <div class="timeline-entry">
+          <div class="timeline-entry-header">
+            ${catBadge(e.cat)}
+            <span class="timeline-entry-title">${esc(e.title)}</span>
+            <button class="del-btn" onclick="delTimeline('${e.id}')">×</button>
+          </div>
+          ${e.notes ? `<div class="timeline-entry-notes">${esc(e.notes)}</div>` : ''}
+          ${e.dur ? `<div class="timeline-entry-meta"><span class="meta-tag">⏱ ${e.dur}분</span></div>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+// ===== CARDS =====
+document.querySelectorAll('[data-cf]').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('[data-cf]').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    cardFilter = chip.dataset.cf;
+    cardIdx = 0; cardFlip = false;
+    renderCards();
+  });
+});
+
+function addCard() {
+  const cat   = document.getElementById('cardCat').value;
+  const front = document.getElementById('cardFront').value.trim();
+  const back  = document.getElementById('cardBack').value.trim();
+  if (!front || !back) { toast('앞면과 뒷면을 모두 입력해주세요', '⚠️'); return; }
+  db.cards.push({id:uid(), cat, front, back});
+  save();
+  closeModal('cardModal');
+  ['cardFront','cardBack'].forEach(id => document.getElementById(id).value = '');
+  renderCards();
+  checkBadges();
+  toast('복습 카드가 추가됐어요!');
+}
+
+function flipCard() {
+  cardFlip = !cardFlip;
+  document.getElementById('flashcard').classList.toggle('flipped', cardFlip);
+}
+
+function prevCard() {
+  if (!filteredCards.length) return;
+  cardIdx = (cardIdx - 1 + filteredCards.length) % filteredCards.length;
+  cardFlip = false;
+  document.getElementById('flashcard').classList.remove('flipped');
+  updateFlashcard(); updateCardList();
+}
+
+function nextCard() {
+  if (!filteredCards.length) return;
+  cardIdx = (cardIdx + 1) % filteredCards.length;
+  cardFlip = false;
+  document.getElementById('flashcard').classList.remove('flipped');
+  updateFlashcard(); updateCardList();
+}
+
+function selectCard(i) {
+  cardIdx = i; cardFlip = false;
+  document.getElementById('flashcard').classList.remove('flipped');
+  updateFlashcard(); updateCardList();
+}
+
+function deleteCard() {
+  if (!filteredCards.length) return;
+  const id = filteredCards[cardIdx].id;
+  db.cards = db.cards.filter(c => c.id !== id);
+  save();
+  if (cardIdx >= filteredCards.length - 1) cardIdx = Math.max(0, cardIdx - 1);
+  renderCards();
+  toast('카드를 삭제했어요', '🗑');
+}
+
+function renderCards() {
+  filteredCards = cardFilter === 'all' ? [...db.cards] : db.cards.filter(c => c.cat === cardFilter);
+  if (cardIdx >= filteredCards.length) cardIdx = 0;
+  updateFlashcard();
+  updateCardList();
+}
+
+function updateFlashcard() {
+  const card = filteredCards[cardIdx];
+  const delBtn = document.getElementById('cardDelBtn');
+  if (!card) {
+    document.getElementById('fcFront').textContent = '카드를 추가해보세요! ✨';
+    document.getElementById('fcBack').textContent  = '-';
+    document.getElementById('cardCounter').textContent = '0 / 0';
+    delBtn.disabled = true; delBtn.style.opacity = '.3';
+    return;
+  }
+  document.getElementById('fcFront').textContent = card.front;
+  document.getElementById('fcBack').textContent  = card.back;
+  document.getElementById('cardCounter').textContent = `${cardIdx+1} / ${filteredCards.length}`;
+  delBtn.disabled = false; delBtn.style.opacity = '1';
+}
+
+function updateCardList() {
+  document.getElementById('cardCount').textContent = filteredCards.length + '개';
+  const el = document.getElementById('cardListItems');
+  if (!filteredCards.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:32px 16px"><div class="empty-icon" style="font-size:32px">🃏</div><p>카드를 추가해보세요!</p></div>`;
+    return;
+  }
+  el.innerHTML = filteredCards.map((c,i) => `
+    <div class="card-list-item ${i===cardIdx?'active':''}" onclick="selectCard(${i})">
+      ${catBadge(c.cat)}
+      <span class="card-list-item-q">${esc(c.front)}</span>
+    </div>
+  `).join('');
+}
+
+// ===== SPEC =====
+function addSpec() {
+  const cat   = document.getElementById('specCat').value;
+  const date  = document.getElementById('specDate').value || today();
+  const title = document.getElementById('specTitle').value.trim();
+  const desc  = document.getElementById('specDesc').value.trim();
+  if (!title) { toast('제목을 입력해주세요', '⚠️'); return; }
+  db.specs.push({id:uid(), cat, date, title, desc});
+  db.specs.sort((a,b) => b.date.localeCompare(a.date));
+  save();
+  closeModal('specModal');
+  ['specTitle','specDesc'].forEach(id => document.getElementById(id).value = '');
+  renderSpecs();
+  checkBadges();
+  toast('스펙이 추가됐어요!');
+}
+
+function delSpec(id) {
+  db.specs = db.specs.filter(x => x.id !== id);
+  save();
+  renderSpecs();
+}
+
+function renderSpecs() {
+  const el = document.getElementById('specList');
+  if (!db.specs.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🏆</div><p>첫 스펙을 등록해보세요!</p></div>`;
+    return;
+  }
+  const icons = {prog:'💻', cert:'📜', lang:'🌍', etc:'📌'};
+  el.innerHTML = db.specs.map(s => `
+    <div class="spec-item">
+      <div class="spec-icon ${s.cat}">${icons[s.cat]||'📌'}</div>
+      <div class="spec-info">
+        <div class="spec-title">${esc(s.title)}</div>
+        ${s.desc ? `<div class="spec-desc">${esc(s.desc)}</div>` : ''}
+        <div class="spec-meta">${catBadge(s.cat)}<span class="spec-date">${fmtDate(s.date)}</span></div>
+      </div>
+      <button class="del-btn" onclick="delSpec('${s.id}')">×</button>
+    </div>
+  `).join('');
+}
+
+// ===== STATS =====
+function renderStats() {
+  const totalMin = db.timeline.reduce((s,e) => s + (e.dur||0), 0);
+  document.getElementById('gEntries').textContent = db.timeline.length + '개';
+  document.getElementById('gHours').textContent   = Math.round(totalMin/60*10)/10 + '시간';
+  document.getElementById('gCards').textContent   = db.cards.length + '개';
+  document.getElementById('gSpecs').textContent   = db.specs.length + '개';
+  document.getElementById('gPlans').textContent   = db.plans.filter(p=>p.done).length + '개';
+}
+
+// ===== BADGES =====
+function checkBadges() {
+  const donePlans = db.plans.filter(p=>p.done).length;
+  const totalMin  = db.timeline.reduce((s,e) => s + (e.dur||0), 0);
+  const unlocked  = new Set(db.badges);
+  const checks = [
+    ['first_plan',  donePlans>=1],
+    ['plan_10',     donePlans>=10],
+    ['plan_50',     donePlans>=50],
+    ['first_tl',    db.timeline.length>=1],
+    ['tl_10',       db.timeline.length>=10],
+    ['first_card',  db.cards.length>=1],
+    ['card_10',     db.cards.length>=10],
+    ['first_spec',  db.specs.length>=1],
+    ['h10',         totalMin>=600],
+    ['h100',        totalMin>=6000],
+  ];
+  let changed = false;
+  checks.forEach(([id, cond]) => {
+    if (cond && !unlocked.has(id)) {
+      unlocked.add(id);
+      changed = true;
+      const b = BADGES_DEF.find(x => x.id === id);
+      if (b) setTimeout(() => toast(`뱃지 획득! ${b.emoji} ${b.name}`, '🎖'), 400);
+    }
+  });
+  if (changed) { db.badges = [...unlocked]; save(); }
+}
+
+function renderBadges() {
+  const unlocked = new Set(db.badges);
+  document.getElementById('badgesGrid').innerHTML = BADGES_DEF.map(b => {
+    const on = unlocked.has(b.id);
+    return `
+      <div class="badge-item ${on?'unlocked':'locked'}">
+        <span class="badge-emoji">${b.emoji}</span>
+        <div><div class="badge-name">${b.name}</div><div class="badge-desc">${b.desc}</div></div>
+      </div>`;
+  }).join('');
+}
+
+// ===== HEADER DATE =====
+function updateDate() {
+  const n = new Date();
+  const day = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'][n.getDay()];
+  document.getElementById('headerDate').textContent =
+    `${n.getFullYear()}.${p2(n.getMonth()+1)}.${p2(n.getDate())} ${day}`;
+}
+
+// ===== INIT =====
+async function init() {
+  await load();
+  updateDate();
+  const t = today();
+  document.getElementById('tlDate').value   = t;
+  document.getElementById('specDate').value = t;
+  renderPlans();
+  renderTimeline();
+  renderCards();
+}
+
+init();
+</script>
+</body>
+</html>
